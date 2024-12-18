@@ -1,0 +1,26 @@
+{{- if and (not .Values.recommenderOnly) .Values.serviceMonitor.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "vertical-pod-autoscaler.updater.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "vertical-pod-autoscaler.updater.labels" . | nindent 4 }}
+  {{- with .Values.serviceMonitor.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  jobLabel: app.kubernetes.io/component-instance
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      {{- include "vertical-pod-autoscaler.updater.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: http-metrics
+      path: /metrics
+    {{- with .Values.serviceMonitor.endpointConfig }}
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+{{- end -}}
